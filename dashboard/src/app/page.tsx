@@ -37,6 +37,9 @@ const WebRTCComponent = () => {
 
         sourceNode.connect(processorNode);
         processorNode.connect(audioContext.destination);
+
+        // Automatically start the call
+        startCall(pc);
       })
       .catch((error) => console.error("Error accessing microphone:", error));
 
@@ -78,16 +81,21 @@ const WebRTCComponent = () => {
     };
   }, []);
 
-  const startCall = async () => {
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socketRef.current.emit("offer", offer);
+  const startCall = async (pc) => {
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socketRef.current.emit("offer", offer);
+      console.log("Call started automatically");
+    } catch (error) {
+      console.error("Error starting call:", error);
+    }
   };
 
   return (
     <div>
       <h1>WebRTC Audio Transmission</h1>
-      <button onClick={startCall}>Start Call</button>
+      <p>Call starts automatically when the page loads.</p>
     </div>
   );
 };

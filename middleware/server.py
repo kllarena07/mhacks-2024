@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_socketio import SocketIO, emit
 import wave
-import time
-from io import BytesIO
+import numpy as np
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Global variable to store audio data
+collected_audio = []
 
 @socketio.on('connect')
 def handle_connect():
@@ -32,21 +34,23 @@ def handle_ice_candidate(candidate):
 
 @socketio.on('audio_data')
 def handle_audio_data(data):
-    print(f'Received audio data: {len(data)} bytes')
+    global collected_audio
+    collected_audio.extend(data)  # Collect incoming audio data
+    print(f'Received audio data: {len(data)} bytes. Total collected: {len(collected_audio)}')
+    
+    if len(collected_audio) >= 220500:  # 44100 * 5 for 5 seconds of audio
+        write_to_file(collected_audio)
+        collected_audio = []  # Clear collected data after writing
 
-    # Create a unique filename based on the current time
-    filename = f'audio_snippet_{int(time.time())}.wav'
-
-    # Assuming the audio data is in raw PCM format, you may need to adjust parameters
-    with wave.open(filename, 'wb') as wf:
+def write_to_file(audio_data):
+    # Convert the audio data to a bytes object
+    audio_bytes = np.array(audio_data, dtype=np.float32).tobytes()  # Assuming float32 in the audio data
+    with wave.open('output.wav', 'wb') as wf:
         wf.setnchannels(1)  # Mono audio
-        wf.setsampwidth(2)  # Sample width in bytes (16-bit audio)
-        wf.setframerate(44100)  # Sample rate (44.1 kHz)
-        
-        # Write the first 5 seconds of audio data
-        wf.writeframes(data[:44100 * 2 * 5])  # 44100 samples/sec * 2 bytes/sample * 5 seconds
-
-    print(f'Saved audio snippet to {filename}')
+        wf.setsampwidth(4)  # 4 bytes for float32
+        wf.setframerate(44100)  # Sample rate
+        wf.writeframes(audio_bytes)
+        print('Audio data written to output.wav')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
