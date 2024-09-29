@@ -1,6 +1,5 @@
 "use client";
 
-// import { generate_audio } from "@/app/actions";
 import { useEffect, useRef } from "react";
 import io, { Socket } from "socket.io-client";
 
@@ -110,7 +109,7 @@ const WebRTCComponent = () => {
         await postMessageAndPlayAudio("Hello, this is a test message.");
       }
     })();
-  }, []);
+  });
 
   return <video ref={videoRef} autoPlay playsInline></video>;
 };
