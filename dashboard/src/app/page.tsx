@@ -19,13 +19,11 @@ const WebRTCComponent = () => {
           withCredentials: true,
           transports: ["websocket", "polling"],
         });
-        const audioStream = await navigator.mediaDevices.getUserMedia({
+        const streams = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true,
         });
-        audioStream
-          .getTracks()
-          .forEach((track) => pc.addTrack(track, audioStream));
+        streams.getTracks().forEach((track) => pc.addTrack(track, streams));
         const pc = new RTCPeerConnection(configuration);
         socketRef.current.on("answer", async (answer) => {
           if (answer) {
@@ -84,14 +82,14 @@ const WebRTCComponent = () => {
 
         pc.addEventListener("track", async (event) => {
           console.log("Incoming track:", event);
-          const [remoteStream] = event.streams;
+          // const [remoteStream] = event.streams;
           console.log(event.streams);
 
-          if (videoRef.current) {
-            videoRef.current.srcObject = remoteStream;
-          }
-          if (audioRef.current) {
-          }
+          // if (videoRef.current) {
+          //   videoRef.current.srcObject = remoteStream;
+          // }
+          // if (audioRef.current) {
+          // }
         });
       }
     })();
