@@ -1,14 +1,38 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 
 const WebRTCComponent = () => {
   const socketRef = useRef<Socket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [chatHistory, setChatHistory] = useState<string[]>([]);
 
   const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  };
+
+  const postMessageAndPlayAudio = async (message: string) => {
+    try {
+      const response = await fetch("/api/tts/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch audio");
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+    } catch (error) {
+      console.error("Error posting message and playing audio:", error);
+    }
   };
 
   useEffect(() => {
@@ -19,9 +43,21 @@ const WebRTCComponent = () => {
           transports: ["websocket", "polling"],
         });
         const pc = new RTCPeerConnection(configuration);
+        pc.addEventListener("datachannel", (event) => {
+          const dataChannel = event.channel;
+          dataChannel.addEventListener("message", async (event) => {
+            const { message } = event.data;
+
+            if (message) {
+              await postMessageAndPlayAudio(message);
+              setChatHistory((prevHistory) => [...prevHistory, message]);
+              console.log(chatHistory);
+            }
+          });
+        });
         const streams = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: false,
+          audio: true,
         });
         streams.getTracks().forEach((track) => pc.addTrack(track, streams));
         socketRef.current.on("answer", async (answer) => {
@@ -82,31 +118,6 @@ const WebRTCComponent = () => {
             videoRef.current.srcObject = remoteStream;
           }
         });
-
-        const postMessageAndPlayAudio = async (message: string) => {
-          try {
-            const response = await fetch("/api/tts/", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ message }),
-            });
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch audio");
-            }
-
-            const audioBlob = await response.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.play();
-          } catch (error) {
-            console.error("Error posting message and playing audio:", error);
-          }
-        };
-
-        await postMessageAndPlayAudio("Hello, this is a test message.");
       }
     })();
   });
