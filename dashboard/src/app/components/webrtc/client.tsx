@@ -51,7 +51,7 @@ const WebRTCComponent = () => {
 
         const streams = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: true,
+          audio: false,
         });
         console.log("User media streams obtained");
 
