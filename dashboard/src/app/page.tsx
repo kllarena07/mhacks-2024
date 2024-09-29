@@ -6,6 +6,7 @@ import io, { Socket } from "socket.io-client";
 const WebRTCComponent = () => {
   const socketRef = useRef<Socket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLVideoElement>(null);
 
   const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -18,7 +19,13 @@ const WebRTCComponent = () => {
           withCredentials: true,
           transports: ["websocket", "polling"],
         });
-
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        audioStream
+          .getTracks()
+          .forEach((track) => pc.addTrack(track, audioStream));
         const pc = new RTCPeerConnection(configuration);
         socketRef.current.on("answer", async (answer) => {
           if (answer) {
@@ -78,28 +85,24 @@ const WebRTCComponent = () => {
         pc.addEventListener("track", async (event) => {
           console.log("Incoming track:", event);
           const [remoteStream] = event.streams;
+          console.log(event.streams);
 
           if (videoRef.current) {
             videoRef.current.srcObject = remoteStream;
           }
+          if (audioRef.current) {
+          }
         });
       }
     })();
-    // return () => {
-    //   if (localStream) {
-    //     localStream.getTracks().forEach((track) => track.stop());
-    //   }
-    //   if (peerConnection) {
-    //     peerConnection.removeEventListener("track", () => {});
-    //     peerConnection.close();
-    //   }
-    //   if (socketRef.current) {
-    //     socketRef.current.disconnect();
-    //   }
-    // };
   }, []);
 
-  return <video ref={videoRef} autoPlay playsInline></video>;
+  return (
+    <main>
+      <video ref={videoRef} autoPlay playsInline></video>
+      <audio ref={audioRef} autoPlay playsInline></audio>
+    </main>
+  );
 };
 
 export default WebRTCComponent;
