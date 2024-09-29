@@ -32,12 +32,6 @@ const WebRTCComponent = () => {
           }
         });
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
