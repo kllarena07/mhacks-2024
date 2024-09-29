@@ -15,15 +15,17 @@ struct ContentView: View {
         NavigationStack {
             VStack {
                 Text(isConnected ? "Status: Connected" : "Status: Not Connected")
+                    .foregroundColor(isConnected ? .green : .red)
                     .font(.headline)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.2))
+                    .frame(width: 200, height: 40)
+                    .background(Color.gray.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.vertical)
+                    
                 Spacer()
                 ZStack {
                     Circle()
                         .fill(Color.red)
-                        .frame(width: 200, height: 200)
+                        .frame(width: 300, height: 300)
                         .overlay(
                             Text("Hold to Connect")
                                 .foregroundColor(.white)
@@ -37,13 +39,6 @@ struct ContentView: View {
                                     
                                     isConnected = true
                                     showSecondScreen = true
-//                                    SignalingClient.sharedInstance.establishConnection()
-//                                    socket.emit("offer")
-//                                    socket.on("offer") { ( dataArray, ack) -> Void in
-//                                        let dataReceived = dataArray[0] as? String
-//                                        
-//                                        
-//                                    }
                                     
                                 }
                             
