@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import io, { Socket } from "socket.io-client";
 // import GoogleMap from "../map/map";
 
@@ -9,39 +9,35 @@ const WebRTCComponent = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   // const [long, setLong] = useState(-83.7376);
   // const [lat, setLat] = useState(42.2783);
-  const [chatHistory, setChatHistory] = useState<string[]>([]);
+  // const [chatHistory, setChatHistory] = useState<string[]>([]);
 
   // setInterval(() => {
   //   setLong((prev) => prev + 0.001);
   //   setLat((prev) => prev + 0.001);
   // }, 1500);
 
-  const configuration = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  };
+  // const postMessageAndPlayAudio = async (message: string) => {
+  //   try {
+  //     const response = await fetch("/api/tts/", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ message }),
+  //     });
 
-  const postMessageAndPlayAudio = async (message: string) => {
-    try {
-      const response = await fetch("/api/tts/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message }),
-      });
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch audio");
+  //     }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch audio");
-      }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.play();
-    } catch (error) {
-      console.error("Error posting message and playing audio:", error);
-    }
-  };
+  //     const audioBlob = await response.blob();
+  //     const audioUrl = URL.createObjectURL(audioBlob);
+  //     const audio = new Audio(audioUrl);
+  //     audio.play();
+  //   } catch (error) {
+  //     console.error("Error posting message and playing audio:", error);
+  //   }
+  // };
 
   useEffect(() => {
     (async () => {
@@ -50,74 +46,22 @@ const WebRTCComponent = () => {
           withCredentials: true,
           transports: ["websocket", "polling"],
         });
-        const pc = new RTCPeerConnection(configuration);
-        pc.addEventListener("datachannel", (event) => {
-          const dataChannel = event.channel;
-          dataChannel.addEventListener("message", async (event) => {
-            const { message } = event.data;
 
-            if (message) {
-              await postMessageAndPlayAudio(message);
-              setChatHistory((prevHistory) => [...prevHistory, message]);
-              console.log(chatHistory);
-            }
-          });
-        });
+        const configuration = {
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        };
+
+        const recv = new RTCPeerConnection(configuration);
         const streams = await navigator.mediaDevices.getUserMedia({
-          video: true,
           audio: true,
-        });
-        streams.getTracks().forEach((track) => pc.addTrack(track, streams));
-        socketRef.current.on("answer", async (answer) => {
-          if (answer) {
-            const remoteDesc = new RTCSessionDescription(answer);
-            await pc.setRemoteDescription(remoteDesc);
-          }
+          video: true,
         });
 
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        socketRef.current.emit("offer", offer);
-
-        socketRef.current.on("offer", async (offer) => {
-          if (offer) {
-            pc.setRemoteDescription(new RTCSessionDescription(offer));
-
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-
-            if (socketRef.current) {
-              socketRef.current.emit("answer", answer);
-            }
-          }
+        streams.getTracks().forEach((track) => {
+          recv.addTrack(track, streams);
         });
 
-        pc.addEventListener("icecandidate", (event) => {
-          if (event.candidate) {
-            if (socketRef.current) {
-              socketRef.current.emit("ice_candidate", event.candidate);
-            }
-          }
-        });
-
-        socketRef.current.on("ice_candidate", async (candidate) => {
-          if (candidate) {
-            try {
-              await pc.addIceCandidate(candidate);
-            } catch (e) {
-              console.error("Error adding received ice candidate", e);
-            }
-          }
-        });
-
-        pc.addEventListener("connectionstatechange", () => {
-          if (pc.connectionState === "connected") {
-            console.log("Peers are connected!");
-          }
-        });
-
-        pc.addEventListener("track", async (event) => {
+        recv.addEventListener("track", async (event) => {
           console.log("Incoming track:", event);
           const remoteStream = event.streams[0];
           console.log(remoteStream);
@@ -126,13 +70,41 @@ const WebRTCComponent = () => {
             videoRef.current.srcObject = remoteStream;
           }
         });
+
+        socketRef.current.on("offer", async (offer) => {
+          const remoteDesc = new RTCSessionDescription(offer);
+          await recv.setRemoteDescription(remoteDesc);
+
+          const answer = await recv.createAnswer();
+          await recv.setLocalDescription(answer);
+
+          if (socketRef.current) socketRef.current.emit("answer", answer);
+        });
+
+        socketRef.current.on("ice_candidate", (candidate) => {
+          if (candidate) {
+            recv.addIceCandidate(new RTCIceCandidate(candidate));
+          }
+        });
+
+        recv.addEventListener("icecandidate", (event) => {
+          if (event.candidate && socketRef.current) {
+            socketRef.current.emit("ice_candidate", event.candidate);
+          }
+        });
+
+        recv.addEventListener("connectionstatechange", () => {
+          if (recv.connectionState === "connected") {
+            console.log("Peers are connected!");
+          }
+        });
       }
     })();
   });
 
   return (
     <section>
-      <video ref={videoRef} autoPlay playsInline></video>
+      <video ref={videoRef} autoPlay playsInline muted></video>
       {/* <GoogleMap longitude={long} latitude={lat} /> */}
     </section>
   );
