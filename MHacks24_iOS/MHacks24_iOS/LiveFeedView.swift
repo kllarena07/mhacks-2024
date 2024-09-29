@@ -11,42 +11,36 @@ import AVFoundation
 struct LiveFeedView: View {
     @State  private var isMuted = false
     @State  private var showChat = false
-    @State  private var isConnected = false
+    @State  private var isConnected = true
     @State  private var translatedTexts: [String] = []
     @StateObject private var stream = VideoStream()
     @Environment(\.dismiss) var dismiss
-//    @StateObject  private var webRTCManager = WebRTCManager()
+    //    @StateObject  private var webRTCManager = WebRTCManager()
     @StateObject  private var speechRecognizer = SpeechRecognizer()
     @StateObject  private var translationService = TranslationService()
     @State  private var sourceLanguage = "en"
     @State  private var targetLanguage = "es"
     // Change this to your desired target language
     /*@StateObject private var signalingClient = SignalingClient()*/ // Add the SignalingClient
-   // @ObservedObject var stream = VideoStream()
+    // @ObservedObject var stream = VideoStream()
     
-
-
+    
+    
     
     var body: some View {
         
         VStack {
             Text(isConnected ? "Status: Connected" : "Status: Not Connected")
+                .foregroundColor(isConnected ? .green : .red)
                 .font(.headline)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.gray.opacity(0.2))
-            
-            Spacer()
-            
-//            if let remoteVideoTrack = stream.remoteVideoTrack {
-//                VideoView(videoTrack: remoteVideoTrack)
-//                    .ignoresSafeArea()
-//            }
+                .frame(width: 200, height: 40)
+                .background(Color.gray.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
+                .padding(.vertical)
             
             if let localVideoTrack = stream.localVideoTrack {
                 
                 VideoView(videoTrack: localVideoTrack)
-                    .frame(width: 150, height: 200)
+                    .frame(width: 350, height: 400)
                     .cornerRadius(8)
                     .padding()
             }
@@ -54,7 +48,6 @@ struct LiveFeedView: View {
             if !speechRecognizer.transcribedText.isEmpty {
                 
                 Text("Transcribed: \(speechRecognizer.transcribedText)")
-                    .padding()
                     .foregroundColor(.gray)
             }
             
@@ -74,30 +67,12 @@ struct LiveFeedView: View {
             }
             .padding(.horizontal)
             
-            HStack {
-                Picker("Source", selection: $sourceLanguage) {
-                    Text("English").tag("en")
-                    Text("Spanish").tag("es")
-                    // Add more languages as needed
-                }
-                .pickerStyle(MenuPickerStyle())
-                
-                Picker("Target", selection: $targetLanguage) {
-                    Text("English").tag("en")
-                    Text("Spanish").tag("es")
-                    // Add more languages as needed
-                }
-                .pickerStyle(MenuPickerStyle())
-            }
-            .padding()
-            
-            Spacer()
             
             HStack {
                 Button(action: {
                     stream.switchCamera()
                 }) {
-                    Image(systemName: "camera.rotate")
+                    Image(systemName: "camera.fill")
                         .resizable()
                         .frame(width: 30, height: 30)
                         .padding()
@@ -118,8 +93,9 @@ struct LiveFeedView: View {
                         .font(.largeTitle)
                         .padding()
                 }
+                .padding(.vertical, 30)
                 
-                Spacer()
+            //    Spacer()
                 
                 Button(action: {
                     showChat = true
@@ -130,9 +106,10 @@ struct LiveFeedView: View {
                 }
                 .sheet(isPresented: $showChat) {
                     ChatView()
+                        .presentationDetents([.medium])
                 }
                 
-                Spacer()
+               // Spacer()
                 
                 Button(action: {
                     isConnected = false
@@ -167,7 +144,7 @@ struct LiveFeedView: View {
         .onAppear {
             // Start Speech Recognition when the view appears
             speechRecognizer.startTranscribing()
-           // signalingClient.connect()
+            // signalingClient.connect()
             
         }
         .onDisappear {
