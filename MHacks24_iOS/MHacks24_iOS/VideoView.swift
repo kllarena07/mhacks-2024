@@ -6,6 +6,8 @@
 //
 import SwiftUI
 import WebRTC
+import SocketIO
+
 struct VideoView: UIViewRepresentable {
     let videoTrack: RTCVideoTrack?
     func makeUIView(context: Context) -> RTCMTLVideoView {

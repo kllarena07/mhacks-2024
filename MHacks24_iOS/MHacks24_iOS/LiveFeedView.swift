@@ -13,12 +13,19 @@ struct LiveFeedView: View {
     @State  private var showChat = false
     @State  private var isConnected = false
     @State  private var translatedTexts: [String] = []
+    @StateObject private var stream = VideoStream()
     @Environment(\.dismiss) var dismiss
-    @StateObject  private var webRTCManager = WebRTCManager()
+//    @StateObject  private var webRTCManager = WebRTCManager()
     @StateObject  private var speechRecognizer = SpeechRecognizer()
     @StateObject  private var translationService = TranslationService()
     @State  private var sourceLanguage = "en"
-    @State  private var targetLanguage = "es" // Change this to your desired target language
+    @State  private var targetLanguage = "es"
+    // Change this to your desired target language
+    /*@StateObject private var signalingClient = SignalingClient()*/ // Add the SignalingClient
+   // @ObservedObject var stream = VideoStream()
+    
+
+
     
     var body: some View {
         
@@ -31,39 +38,18 @@ struct LiveFeedView: View {
             
             Spacer()
             
-            if let remoteVideoTrack = webRTCManager.remoteVideoTrack {
-                VideoView(videoTrack: remoteVideoTrack)
-                    .ignoresSafeArea()
-            }
+//            if let remoteVideoTrack = stream.remoteVideoTrack {
+//                VideoView(videoTrack: remoteVideoTrack)
+//                    .ignoresSafeArea()
+//            }
             
-            if let localVideoTrack = webRTCManager.localVideoTrack {
+            if let localVideoTrack = stream.localVideoTrack {
+                
                 VideoView(videoTrack: localVideoTrack)
                     .frame(width: 150, height: 200)
                     .cornerRadius(8)
                     .padding()
             }
-            
-            // Display translated texts
-            //            ScrollViewReader { proxy in
-            //                ScrollView {
-            //                    VStack(alignment: .leading, spacing: 10) {
-            //                        ForEach(translatedTexts.indices, id: \.self) { index in
-            //                            Text(translatedTexts[index])
-            //                                .padding(.vertical, 2)
-            //                                .id(index)
-            //                        }
-            //                    }
-            ////                    .onChange(of: translatedTexts) { _ in
-            ////                        if let lastIndex = translatedTexts.indices.last {
-            ////                            proxy.scrollTo(lastIndex, anchor: .bottom)
-            ////                        }
-            ////                    }
-            //                }
-            //            }
-            //            .frame(height: 100)
-            //            .background(Color.gray.opacity(0.1))
-            //            .cornerRadius(8)
-            //            .padding()
             
             if !speechRecognizer.transcribedText.isEmpty {
                 
@@ -109,10 +95,22 @@ struct LiveFeedView: View {
             
             HStack {
                 Button(action: {
+                    stream.switchCamera()
+                }) {
+                    Image(systemName: "camera.rotate")
+                        .resizable()
+                        .frame(width: 30, height: 30)
+                        .padding()
+                        .background(Color.white.opacity(0.7))
+                        .clipShape(Circle())
+                        .shadow(radius: 5)
+                }
+                .padding()
+                Button(action: {
                     isMuted.toggle()
                     if isMuted {
                         speechRecognizer.stopTranscribing()
-                    } else if webRTCManager.remoteVideoTrack != nil {
+                    } else if stream.remoteVideoTrack != nil {
                         speechRecognizer.startTranscribing()
                     }
                 }) {
@@ -169,10 +167,13 @@ struct LiveFeedView: View {
         .onAppear {
             // Start Speech Recognition when the view appears
             speechRecognizer.startTranscribing()
+           // signalingClient.connect()
+            
         }
         .onDisappear {
             // Stop Speech Recognition when the view disappears
             speechRecognizer.stopTranscribing()
+            
         }
     }
 }
