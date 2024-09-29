@@ -6,7 +6,6 @@ import io, { Socket } from "socket.io-client";
 const WebRTCComponent = () => {
   const socketRef = useRef<Socket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLVideoElement>(null);
 
   const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -76,25 +75,18 @@ const WebRTCComponent = () => {
 
         pc.addEventListener("track", async (event) => {
           console.log("Incoming track:", event);
-          // const [remoteStream] = event.streams;
-          console.log(event.streams);
+          const remoteStream = event.streams[0];
+          console.log(remoteStream);
 
-          // if (videoRef.current) {
-          //   videoRef.current.srcObject = remoteStream;
-          // }
-          // if (audioRef.current) {
-          // }
+          if (videoRef.current) {
+            videoRef.current.srcObject = remoteStream;
+          }
         });
       }
     })();
   }, []);
 
-  return (
-    <main>
-      <video ref={videoRef} autoPlay playsInline></video>
-      <audio ref={audioRef} autoPlay playsInline></audio>
-    </main>
-  );
+  return <video ref={videoRef} autoPlay playsInline></video>;
 };
 
 export default WebRTCComponent;
