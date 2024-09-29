@@ -35,4 +35,4 @@ def handle_ice_candidate(candidate):
     emit('ice_candidate', candidate, broadcast=True, include_self=False)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host="0.0.0.0", port=8080, debug=True)
