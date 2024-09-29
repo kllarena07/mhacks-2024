@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
+import { useEffect, useRef } from "react";
+import io, { Socket } from "socket.io-client";
 
 const WebRTCComponent = () => {
-  const [peerConnection, setPeerConnection] = useState(null);
-  const [localStream, setLocalStream] = useState(null);
-  const socketRef = useRef(null);
-  const videoRef = useRef(null);
+  const socketRef = useRef<Socket | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -16,10 +14,9 @@ const WebRTCComponent = () => {
   useEffect(() => {
     (async () => {
       if (!socketRef.current) {
-        socketRef.current = io("http://127.0.0.1:5000");
+        socketRef.current = io("https://hurry.ngrok.dev");
 
         const pc = new RTCPeerConnection(configuration);
-        setPeerConnection(pc);
         socketRef.current.on("answer", async (answer) => {
           if (answer) {
             const remoteDesc = new RTCSessionDescription(answer);
@@ -32,7 +29,6 @@ const WebRTCComponent = () => {
           audio: false,
         });
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-        setLocalStream(stream);
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -46,13 +42,17 @@ const WebRTCComponent = () => {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
-            socketRef.current.emit("answer", answer);
+            if (socketRef.current) {
+              socketRef.current.emit("answer", answer);
+            }
           }
         });
 
         pc.addEventListener("icecandidate", (event) => {
           if (event.candidate) {
-            socketRef.current.emit("ice_candidate", event.candidate);
+            if (socketRef.current) {
+              socketRef.current.emit("ice_candidate", event.candidate);
+            }
           }
         });
 
