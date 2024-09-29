@@ -14,7 +14,10 @@ const WebRTCComponent = () => {
   useEffect(() => {
     (async () => {
       if (!socketRef.current) {
-        socketRef.current = io("https://hurry.ngrok.dev");
+        socketRef.current = io("https://hurry.ngrok.dev", {
+          withCredentials: true,
+          transports: ["websocket", "polling"],
+        });
 
         const pc = new RTCPeerConnection(configuration);
         socketRef.current.on("answer", async (answer) => {

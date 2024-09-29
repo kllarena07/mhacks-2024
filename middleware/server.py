@@ -4,7 +4,7 @@ from flask_socketio import SocketIO, emit
 from flask import request
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 @socketio.on('connect')
