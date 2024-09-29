@@ -4,17 +4,19 @@
 //
 //  Created by Gabriel Push on 9/28/24.
 //
-
 import Foundation
 import Speech
 import AVFoundation
-
+@MainActor
 class SpeechRecognizer: NSObject, ObservableObject {
-    @Published var transcribedText: String = ""
+    @Published  var transcribedText: String = ""
+    @Published  var translatedText: String = ""
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
+    private let translationService = TranslationService()
+    var targetLanguage: String = "Spanish"
     
     override init() {
         super.init()
@@ -24,19 +26,18 @@ class SpeechRecognizer: NSObject, ObservableObject {
     // Request Authorization
     private func requestAuthorization() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
-            DispatchQueue.main.async {
-                switch authStatus {
-                case .authorized:
-                    print("Speech recognition authorized")
-                case .denied:
-                    print("Speech recognition authorization denied")
-                case .restricted:
-                    print("Speech recognition restricted on this device")
-                case .notDetermined:
-                    print("Speech recognition not determined")
-                @unknown default:
-                    print("Unknown authorization status")
-                }
+            // Already on main thread due to  @MainActor
+            switch authStatus {
+            case .authorized:
+                print("Speech recognition authorized")
+            case .denied:
+                print("Speech recognition authorization denied")
+            case .restricted:
+                print("Speech recognition restricted on this device")
+            case .notDetermined:
+                print("Speech recognition not determined")
+            @unknown  default:
+                print("Unknown authorization status")
             }
         }
     }
@@ -80,14 +81,15 @@ class SpeechRecognizer: NSObject, ObservableObject {
         }
         
         // Start recognition task
-        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
-            if let result = result {
-                DispatchQueue.main.async {
+        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+            guard let self = self else { return }
+            Task {  @MainActor  in
+                if let result = result {
                     self.transcribedText = result.bestTranscription.formattedString
                 }
-            }
-            if error != nil || (result?.isFinal ?? false) {
-                self.stopTranscribing()
+                if error != nil || (result?.isFinal ?? false) {
+                    self.stopTranscribing()
+                }
             }
         }
     }
@@ -98,6 +100,22 @@ class SpeechRecognizer: NSObject, ObservableObject {
         request?.endAudio()
         recognitionTask?.cancel()
         recognitionTask = nil
+    }
+    
+    private func translateText(_ text: String) {
+        translationService.translate(text: text, toLanguage: targetLanguage) { result in
+            switch result {
+            case .success(let translated):
+                DispatchQueue.main.async {
+                    self.translatedText = translated
+                    // Send the translated text to the operator via your backend
+                    // Example:
+                    // self.sendMessageToOperator(translated)
+                }
+            case .failure(let error):
+                print("Translation error: \(error.localizedDescription)")
+            }
+        }
     }
 }
 
