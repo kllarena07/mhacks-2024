@@ -84,7 +84,30 @@ const WebRTCComponent = () => {
           }
         });
 
-        // await generate_audio("hello!");
+        const postMessageAndPlayAudio = async (message: string) => {
+          try {
+            const response = await fetch("/api/tts/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ message }),
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch audio");
+            }
+
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+          } catch (error) {
+            console.error("Error posting message and playing audio:", error);
+          }
+        };
+
+        await postMessageAndPlayAudio("Hello, this is a test message.");
       }
     })();
   }, []);
