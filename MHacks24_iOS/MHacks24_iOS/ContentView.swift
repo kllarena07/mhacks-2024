@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var isConnected = false
     @State private var showSecondScreen = false
+//    var socket = SignalingClient.sharedInstance.getSocket()
     var body: some View {
         NavigationStack {
             VStack {
@@ -29,13 +30,20 @@ struct ContentView: View {
                                 .font(.title)
                         )
                         .gesture(
-                            LongPressGesture(minimumDuration: 3.0)
+                            LongPressGesture(minimumDuration: 1.0)
                                 .onEnded { _ in
                                     let generator = UINotificationFeedbackGenerator()
                                     generator.notificationOccurred(.success)
                                     
                                     isConnected = true
                                     showSecondScreen = true
+//                                    SignalingClient.sharedInstance.establishConnection()
+//                                    socket.emit("offer")
+//                                    socket.on("offer") { ( dataArray, ack) -> Void in
+//                                        let dataReceived = dataArray[0] as? String
+//                                        
+//                                        
+//                                    }
                                     
                                 }
                             
