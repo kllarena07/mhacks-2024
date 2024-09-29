@@ -63,7 +63,10 @@ const WebRTCComponent = () => {
         socketRef.current.on("answer", async (answer) => {
           console.log("Received answer:", answer);
           if (answer) {
-            const newAnswer = answer.sdp.replace(/m=audio.*?\r\n/g, "");
+            const newAnswer = {
+              type: answer.type,
+              sdp: answer.sdp.replace(/m=audio.*?\r\n/g, ""),
+            };
             console.log("Removing audio from SDP:", newAnswer);
 
             const remoteDesc = new RTCSessionDescription(newAnswer);
