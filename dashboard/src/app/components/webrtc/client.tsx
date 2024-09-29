@@ -51,7 +51,7 @@ const WebRTCComponent = () => {
 
         const streams = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: false,
+          audio: true,
         });
         console.log("User media streams obtained");
 
@@ -63,9 +63,17 @@ const WebRTCComponent = () => {
         socketRef.current.on("answer", async (answer) => {
           console.log("Received answer:", answer);
           if (answer) {
-            const remoteDesc = new RTCSessionDescription(answer);
-            await pc.setRemoteDescription(remoteDesc);
-            console.log("Remote description set with answer");
+            const newAnswer = answer.sdp.replace(/m=audio.*?\r\n/g, "");
+            console.log("Removing audio from SDP:", newAnswer);
+
+            const remoteDesc = new RTCSessionDescription(newAnswer);
+
+            try {
+              await pc.setRemoteDescription(remoteDesc);
+              console.log("Remote description set with modified answer.");
+            } catch (e) {
+              console.error("Error setting remote description:", e);
+            }
           }
         });
 
@@ -135,10 +143,6 @@ const WebRTCComponent = () => {
       }
     })();
   });
-  // setInterval(() => {
-  //   setLong((prev) => prev + 0.001);
-  //   setLat((prev) => prev + 0.001);
-  // }, 1500);
 
   const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
