@@ -9,35 +9,35 @@ const WebRTCComponent = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   // const [long, setLong] = useState(-83.7376);
   // const [lat, setLat] = useState(42.2783);
-  const [chatHistory, setChatHistory] = useState<string[]>([]);
+  // const [chatHistory, setChatHistory] = useState<string[]>([]);
 
   // setInterval(() => {
   //   setLong((prev) => prev + 0.001);
   //   setLat((prev) => prev + 0.001);
   // }, 1500);
 
-  const postMessageAndPlayAudio = async (message: string) => {
-    try {
-      const response = await fetch("/api/tts/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message }),
-      });
+  // const postMessageAndPlayAudio = async (message: string) => {
+  //   try {
+  //     const response = await fetch("/api/tts/", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ message }),
+  //     });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch audio");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch audio");
+  //     }
 
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.play();
-    } catch (error) {
-      console.error("Error posting message and playing audio:", error);
-    }
-  };
+  //     const audioBlob = await response.blob();
+  //     const audioUrl = URL.createObjectURL(audioBlob);
+  //     const audio = new Audio(audioUrl);
+  //     audio.play();
+  //   } catch (error) {
+  //     console.error("Error posting message and playing audio:", error);
+  //   }
+  // };
 
   useEffect(() => {
     (async () => {
