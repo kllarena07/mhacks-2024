@@ -19,12 +19,12 @@ const WebRTCComponent = () => {
           withCredentials: true,
           transports: ["websocket", "polling"],
         });
+        const pc = new RTCPeerConnection(configuration);
         const streams = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true,
         });
         streams.getTracks().forEach((track) => pc.addTrack(track, streams));
-        const pc = new RTCPeerConnection(configuration);
         socketRef.current.on("answer", async (answer) => {
           if (answer) {
             const remoteDesc = new RTCSessionDescription(answer);
