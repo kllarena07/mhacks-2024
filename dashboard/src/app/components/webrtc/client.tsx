@@ -134,7 +134,7 @@ const WebRTCComponent = () => {
         });
       }
     })();
-  }, []);
+  });
   // setInterval(() => {
   //   setLong((prev) => prev + 0.001);
   //   setLat((prev) => prev + 0.001);
